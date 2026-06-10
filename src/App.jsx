@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import carritoIcon from '../carrito.png';
 import './index.css';
 
-// Componente principal de la tienda: login, lista de productos y carrito.
 function App() {
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState([]);
@@ -13,6 +12,11 @@ function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [selectedProductId, setSelectedProductId] = useState(null);
+
+  // estados para el pago y factura
+  const [checkoutStep, setCheckoutStep] = useState('cart'); 
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [invoice, setInvoice] = useState(null);
 
   // Carga los productos desde la API cuando se monta el componente.
   useEffect(() => {
@@ -90,6 +94,41 @@ function App() {
   // Totales mostrados en el carrito.
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  // --- NUEVAS FUNCIONES PARA PROCESAR EL PAGO ---
+  const handleProccedToPayment = () => {
+    setCheckoutStep('payment');
+  };
+
+  const handleProcessOrder = () => {
+    if (!paymentMethod) {
+      alert('Por favor, selecciona un método de pago.');
+      return;
+    }
+
+    // Guardamos una copia de los datos actuales para la factura fija
+    setInvoice({
+      items: [...cartItems],
+      payment: paymentMethod,
+      total: totalPrice,
+      date: new Date().toLocaleString(),
+      orderNumber: Math.floor(Math.random() * 900000) + 100000
+    });
+
+    // Avanzamos al paso de la factura
+    setCheckoutStep('invoice');
+    
+    // Limpiamos el carrito de compras original
+    setCartItems([]);
+  };
+
+  const handleCloseInvoice = () => {
+    // Reseteamos el flujo del checkout para futuras compras
+    setCheckoutStep('cart');
+    setPaymentMethod('');
+    setInvoice(null);
+    setCartOpen(false);
+  };
 
   // Mientras no haya sesión iniciada, mostramos el formulario de login.
   if (!loggedIn) {
@@ -206,54 +245,166 @@ function App() {
         })}
       </main>
 
-      {/* Panel lateral del carrito con los productos agregados. */}
+      {/* Panel lateral del carrito / checkout */}
       <div className={`cart-sidebar ${cartOpen ? 'open' : ''}`}>
         <div className="cart-sidebar-header">
-          <h2>Tu Carrito</h2>
-          <button className="close-btn" onClick={() => setCartOpen(false)}>×</button>
+          {checkoutStep === 'cart' && <h2>Tu Carrito</h2>}
+          {checkoutStep === 'payment' && <h2>Método de Pago</h2>}
+          {checkoutStep === 'invoice' && <h2>Factura de Compra</h2>}
+          <button className="close-btn" onClick={handleCloseInvoice}>×</button>
         </div>
 
         <div className="cart-sidebar-content">
-          {cartItems.length === 0 ? (
-            <p className="empty-cart-msg">El carrito está vacío.</p>
-          ) : (
-            cartItems.map((item) => (
-              <div key={item.id} className="cart-item">
-                <img src={item.image} alt={item.title} className="cart-item-img" />
-                <div className="cart-item-details">
-                  <h3>{item.title}</h3>
-                  <p className="cart-item-price">${(item.price * item.quantity).toFixed(2)}</p>
-                  
-                  <div className="cart-item-actions">
-                    <div className="quantity-controls">
-                      <button onClick={() => removeFromCart(item.id)}>-</button>
-                      <span>{item.quantity}</span>
-                      <button onClick={() => addToCart(item)}>+</button>
+          {/* lista del carrito */}
+          {checkoutStep === 'cart' && (
+            cartItems.length === 0 ? (
+              <p className="empty-cart-msg">El carrito está vacío.</p>
+            ) : (
+              cartItems.map((item) => (
+                <div key={item.id} className="cart-item">
+                  <img src={item.image} alt={item.title} className="cart-item-img" />
+                  <div className="cart-item-details">
+                    <h3>{item.title}</h3>
+                    <p className="cart-item-price">${(item.price * item.quantity).toFixed(2)}</p>
+                    <div className="cart-item-actions">
+                      <div className="quantity-controls">
+                        <button onClick={() => removeFromCart(item.id)}>-</button>
+                        <span>{item.quantity}</span>
+                        <button onClick={() => addToCart(item)}>+</button>
+                      </div>
+                      <button className="delete-btn" onClick={() => clearProduct(item.id)}>
+                        Eliminar
+                      </button>
                     </div>
-                    <button className="delete-btn" onClick={() => clearProduct(item.id)}>
-                      Eliminar
-                    </button>
                   </div>
                 </div>
+              ))
+            )
+          )}
+
+          {/* metodo de pagos */}
+          {checkoutStep === 'payment' && (
+            <div className="payment-selection">
+              <p>Selecciona cómo deseas abonar tu compra:</p>
+              <div className="payment-options">
+                <label className="payment-option">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="Tarjeta de Crédito / Débito"
+                    checked={paymentMethod === 'Tarjeta de Crédito / Débito'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                  <span>💳 Tarjeta de Crédito / Débito</span>
+                </label>
+                <label className="payment-option">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="PayPal"
+                    checked={paymentMethod === 'PayPal'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                  <span>🅿️ PayPal</span>
+                </label>
+                <label className="payment-option">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="Transferencia Bancaria"
+                    checked={paymentMethod === 'Transferencia Bancaria'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                  <span>🏦 Transferencia Bancaria</span>
+                </label>
+                <label className="payment-option">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="Efectivo / Pago Local"
+                    checked={paymentMethod === 'Efectivo / Pago Local'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                  <span>💵 Efectivo / Pago Local</span>
+                </label>
               </div>
-            ))
+              <button className="back-btn" onClick={() => setCheckoutStep('cart')}>
+                Volver al carrito
+              </button>
+            </div>
+          )}
+
+          {/* Factura */}
+          {checkoutStep === 'invoice' && invoice && (
+            <div className="invoice-container">
+              <div className="invoice-success-badge">✓ ¡Pago Exitoso!</div>
+              <div className="invoice-details">
+                <p><strong>Nro. de Orden:</strong> #{invoice.orderNumber}</p>
+                <p><strong>Fecha:</strong> {invoice.date}</p>
+                <p><strong>Método de Pago:</strong> {invoice.payment}</p>
+              </div>
+              
+              <hr />
+              
+              <h3>Productos comprados:</h3>
+              <div className="invoice-items-list">
+                {invoice.items.map((item) => (
+                  <div key={item.id} className="invoice-item-row">
+                    <span className="invoice-item-title">
+                      {item.title} <strong>(x{item.quantity})</strong>
+                    </span>
+                    <span className="invoice-item-subtotal">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              
+              <hr />
+              
+              <div className="invoice-total-row">
+                <span>Total Pagado:</span>
+                <strong>${invoice.total.toFixed(2)}</strong>
+              </div>
+            </div>
           )}
         </div>
 
-        {cartItems.length > 0 && (
+        {/* Footer del panel */}
+        {checkoutStep === 'cart' && cartItems.length > 0 && (
           <div className="cart-sidebar-footer">
             <div className="cart-total">
               <span>Total:</span>
               <strong>${totalPrice.toFixed(2)}</strong>
             </div>
-            <button className="checkout-btn" onClick={() => alert('¡Gracias por tu compra simulada!')}>
+            <button className="checkout-btn" onClick={handleProccedToPayment}>
               Proceder al Pago
+            </button>
+          </div>
+        )}
+
+        {checkoutStep === 'payment' && (
+          <div className="cart-sidebar-footer">
+            <div className="cart-total">
+              <span>Total a pagar:</span>
+              <strong>${totalPrice.toFixed(2)}</strong>
+            </div>
+            <button className="checkout-btn finish-btn" onClick={handleProcessOrder}>
+              Finalizar Pago
+            </button>
+          </div>
+        )}
+
+        {checkoutStep === 'invoice' && (
+          <div className="cart-sidebar-footer">
+            <button className="checkout-btn close-invoice-btn" onClick={handleCloseInvoice}>
+              Entendido / Cerrar
             </button>
           </div>
         )}
       </div>
 
-      {cartOpen && <div className="cart-overlay" onClick={() => setCartOpen(false)}></div>}
+      {cartOpen && <div className="cart-overlay" onClick={handleCloseInvoice}></div>}
     </div>
   );
 }
