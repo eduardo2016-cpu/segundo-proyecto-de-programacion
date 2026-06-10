@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import carritoIcon from '../carrito.png';
 import './index.css';
 
+// Componente principal de la tienda: login, lista de productos y carrito.
 function App() {
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState([]);
@@ -13,6 +14,7 @@ function App() {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [selectedProductId, setSelectedProductId] = useState(null);
 
+  // Carga los productos desde la API cuando se monta el componente.
   useEffect(() => {
     function loadProducts() {
       fetch('https://fakestoreapi.com/products')
@@ -30,6 +32,7 @@ function App() {
     loadProducts();
   }, []);
 
+  // Valida el login y permite entrar a la tienda.
   const handleLogin = (event) => {
     event.preventDefault();
 
@@ -42,11 +45,13 @@ function App() {
     setLoggedIn(true);
   };
 
+  // Actualiza los valores del formulario de login.
   const handleFieldChange = ({ target }) => {
     const { name, value } = target;
     setCredentials((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Agrega un producto al carrito o aumenta su cantidad si ya existe.
   const addToCart = (product) => {
     setCartItems((items) => {
       const existingItem = items.find((item) => item.id === product.id);
@@ -61,6 +66,7 @@ function App() {
     });
   };
 
+  // Reduce la cantidad de un producto en el carrito.
   const removeFromCart = (productId) => {
     setCartItems((items) => {
       const item = items.find((entry) => entry.id === productId);
@@ -76,13 +82,16 @@ function App() {
     });
   };
 
+  // Quita completamente un producto del carrito.
   const clearProduct = (productId) => {
     setCartItems((items) => items.filter((entry) => entry.id !== productId));
   };
 
+  // Totales mostrados en el carrito.
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+  // Mientras no haya sesión iniciada, mostramos el formulario de login.
   if (!loggedIn) {
     return (
       <div className="login-page">
@@ -197,6 +206,7 @@ function App() {
         })}
       </main>
 
+      {/* Panel lateral del carrito con los productos agregados. */}
       <div className={`cart-sidebar ${cartOpen ? 'open' : ''}`}>
         <div className="cart-sidebar-header">
           <h2>Tu Carrito</h2>
