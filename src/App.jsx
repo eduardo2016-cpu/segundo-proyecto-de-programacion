@@ -95,7 +95,7 @@ function App() {
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  // --- NUEVAS FUNCIONES PARA PROCESAR EL PAGO ---
+  // funciones para procesar los pagos
   const handleProccedToPayment = () => {
     setCheckoutStep('payment');
   };
@@ -324,7 +324,7 @@ function App() {
                     value="Efectivo / Pago Local"
                     checked={paymentMethod === 'Efectivo / Pago Local'}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                  />
+                  />  
                   <span>💵 Efectivo / Pago Local</span>
                 </label>
               </div>
