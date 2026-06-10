@@ -1,64 +1,126 @@
 import { useEffect, useState } from 'react';
-import './index.css'; // Asegúrate de tener tus estilos aquí
+import carritoIcon from '../carrito.png';
+import './index.css';
 
 function App() {
   const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // NUEVO: Estado para abrir y cerrar la vista del carrito
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [authError, setAuthError] = useState(null);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [selectedProductId, setSelectedProductId] = useState(null);
 
   useEffect(() => {
-    fetch('https://fakestoreapi.com/products')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Error al cargar productos');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setProducts(data);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+    function loadProducts() {
+      fetch('https://fakestoreapi.com/products')
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('No se pudieron cargar los productos.');
+          }
+          return response.json();
+        })
+        .then(setProducts)
+        .catch((err) => setError(err.message))
+        .finally(() => setLoading(false));
+    }
+
+    loadProducts();
   }, []);
 
-  // 1. FUNCIÓN: Agregar al carrito (La tuya, ¡está perfecta!)
+  const handleLogin = (event) => {
+    event.preventDefault();
+
+    if (!credentials.username.trim() || !credentials.password.trim()) {
+      setAuthError('Usuario y contraseña son requeridos.');
+      return;
+    }
+
+    setAuthError(null);
+    setLoggedIn(true);
+  };
+
+  const handleFieldChange = ({ target }) => {
+    const { name, value } = target;
+    setCredentials((prev) => ({ ...prev, [name]: value }));
+  };
+
   const addToCart = (product) => {
-    setCart((currentCart) => {
-      const existingItem = currentCart.find((item) => item.id === product.id);
+    setCartItems((items) => {
+      const existingItem = items.find((item) => item.id === product.id);
+
       if (existingItem) {
-        return currentCart.map((item) =>
+        return items.map((item) =>
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
-      return [...currentCart, { ...product, quantity: 1 }];
+
+      return [...items, { ...product, quantity: 1 }];
     });
   };
 
-  // 2. NUEVA FUNCIÓN: Restar cantidad o eliminar si llega a 0
   const removeFromCart = (productId) => {
-    setCart((currentCart) => {
-      const existingItem = currentCart.find((item) => item.id === productId);
-      if (existingItem.quantity === 1) {
-        return currentCart.filter((item) => item.id !== productId);
+    setCartItems((items) => {
+      const item = items.find((entry) => entry.id === productId);
+      if (!item) return items;
+
+      if (item.quantity === 1) {
+        return items.filter((entry) => entry.id !== productId);
       }
-      return currentCart.map((item) =>
-        item.id === productId ? { ...item, quantity: item.quantity - 1 } : item
+
+      return items.map((entry) =>
+        entry.id === productId ? { ...entry, quantity: entry.quantity - 1 } : entry
       );
     });
   };
 
-  // 3. NUEVA FUNCIÓN: Eliminar por completo un producto del carrito
   const clearProduct = (productId) => {
-    setCart((currentCart) => currentCart.filter((item) => item.id !== productId));
+    setCartItems((items) => items.filter((entry) => entry.id !== productId));
   };
 
-  // CÁLCULOS: Totales dinámicos
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  if (!loggedIn) {
+    return (
+      <div className="login-page">
+        <div className="login-card">
+          <h1>Iniciar sesión</h1>
+          <p>Accede a la tienda con tu usuario y contraseña.</p>
+          <form onSubmit={handleLogin} className="login-form">
+            <label>
+              Usuario
+              <input
+                type="text"
+                name="username"
+                value={credentials.username}
+                onChange={handleFieldChange}
+                className="login-input"
+                placeholder="Escribe tu usuario"
+              />
+            </label>
+            <label>
+              Contraseña
+              <input
+                type="password"
+                name="password"
+                value={credentials.password}
+                onChange={handleFieldChange}
+                className="login-input"
+                placeholder="Escribe tu contraseña"
+              />
+            </label>
+            {authError && <p className="login-error">{authError}</p>}
+            <button type="submit" className="login-btn">
+              Entrar
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -67,9 +129,9 @@ function App() {
           <h1>Tienda</h1>
           <p>Productos desde una API pública usando solo React.</p>
         </div>
-        {/* MODIFICADO: Ahora el botón del carrito es interactivo y abre el menú */}
-        <button className="cart-summary-btn" onClick={() => setIsCartOpen(true)}>
-          Carrito: <strong>{totalItems}</strong> artículos
+        <button className="cart-icon-btn" onClick={() => setCartOpen(true)} aria-label="Abrir carrito">
+          <img src={carritoIcon} alt="Carrito" className="cart-image-icon" />
+          {totalItems > 0 && <span className="cart-badge">{totalItems}</span>}
         </button>
       </header>
 
@@ -77,31 +139,75 @@ function App() {
       {error && <p className="status-message error">{error}</p>}
 
       <main className="product-grid">
-        {products.map((product) => (
-          <article key={product.id} className="product-card">
-            <img src={product.image} alt={product.title} />
-            <div className="product-info">
-              <h2>{product.title}</h2>
-              <p>{product.category}</p>
-              <strong>${product.price.toFixed(2)}</strong>
-              <button onClick={() => addToCart(product)}>Agregar al carrito</button>
-            </div>
-          </article>
-        ))}
+        {products.map((product) => {
+          const isSelected = selectedProductId === product.id;
+          const itemInCart = cartItems.find((item) => item.id === product.id);
+          return (
+            <article
+              key={product.id}
+              className={`product-card ${isSelected ? 'selected' : ''}`}
+              onClick={() => setSelectedProductId(product.id)}
+            >
+              <img src={product.image} alt={product.title} />
+              <div className="product-info">
+                <h2>{product.title}</h2>
+                <p>{product.category}</p>
+                <strong>${product.price.toFixed(2)}</strong>
+                <div className="product-actions">
+                  {isSelected && (
+                    <button
+                      className="control-btn"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        removeFromCart(product.id);
+                      }}
+                      disabled={!itemInCart}
+                    >
+                      -
+                    </button>
+                  )}
+
+                  <button
+                    className={`add-to-cart-btn ${itemInCart ? 'active' : ''}`}
+                    disabled={!!itemInCart}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setSelectedProductId(product.id);
+                      addToCart(product);
+                    }}
+                  >
+                    Agregar al carrito
+                  </button>
+
+                  {isSelected && (
+                    <button
+                      className="control-btn"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        addToCart(product);
+                      }}
+                    >
+                      +
+                    </button>
+                  )}
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </main>
 
-      {/* ================= COMPONENTE DE CARRITO LATERAL ================= */}
-      <div className={`cart-sidebar ${isCartOpen ? 'open' : ''}`}>
+      <div className={`cart-sidebar ${cartOpen ? 'open' : ''}`}>
         <div className="cart-sidebar-header">
           <h2>Tu Carrito</h2>
-          <button className="close-btn" onClick={() => setIsCartOpen(false)}>×</button>
+          <button className="close-btn" onClick={() => setCartOpen(false)}>×</button>
         </div>
 
         <div className="cart-sidebar-content">
-          {cart.length === 0 ? (
+          {cartItems.length === 0 ? (
             <p className="empty-cart-msg">El carrito está vacío.</p>
           ) : (
-            cart.map((item) => (
+            cartItems.map((item) => (
               <div key={item.id} className="cart-item">
                 <img src={item.image} alt={item.title} className="cart-item-img" />
                 <div className="cart-item-details">
@@ -124,7 +230,7 @@ function App() {
           )}
         </div>
 
-        {cart.length > 0 && (
+        {cartItems.length > 0 && (
           <div className="cart-sidebar-footer">
             <div className="cart-total">
               <span>Total:</span>
@@ -137,8 +243,7 @@ function App() {
         )}
       </div>
 
-      {/* Fondo oscuro traslúcido cuando el carrito está abierto */}
-      {isCartOpen && <div className="cart-overlay" onClick={() => setIsCartOpen(false)}></div>}
+      {cartOpen && <div className="cart-overlay" onClick={() => setCartOpen(false)}></div>}
     </div>
   );
 }
