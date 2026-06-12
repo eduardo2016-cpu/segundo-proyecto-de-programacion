@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react';
 import carritoIcon from '../carrito.png';
-
-// 1. Importamos las nuevas imágenes para los métodos de pago
-// (Asegúrate de que estas rutas coincidan con la ubicación real de tus archivos)
 import tarjetaIcon from '../tarjeta.png';
 import paypalIcon from '../paypal.png';
 import bancoIcon from '../banco.png';
