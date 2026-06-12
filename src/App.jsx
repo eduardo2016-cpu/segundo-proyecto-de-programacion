@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
 import carritoIcon from '../carrito.png';
+
+// 1. Importamos las nuevas imágenes para los métodos de pago
+// (Asegúrate de que estas rutas coincidan con la ubicación real de tus archivos)
+import tarjetaIcon from '../tarjeta.png';
+import paypalIcon from '../paypal.png';
+import bancoIcon from '../banco.png';
+import efectivoIcon from '../efectivo.png';
+
 import './index.css';
 
 function App() {
@@ -282,57 +290,78 @@ function App() {
             )
           )}
 
-          {/* metodo de pagos */}
-          {checkoutStep === 'payment' && (
-            <div className="payment-selection">
-              <p>Selecciona cómo deseas abonar tu compra:</p>
-              <div className="payment-options">
-                <label className="payment-option">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="Tarjeta de Crédito / Débito"
-                    checked={paymentMethod === 'Tarjeta de Crédito / Débito'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                  />
-                  <span>💳 Tarjeta de Crédito / Débito</span>
-                </label>
-                <label className="payment-option">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="PayPal"
-                    checked={paymentMethod === 'PayPal'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                  />
-                  <span>🅿️ PayPal</span>
-                </label>
-                <label className="payment-option">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="Transferencia Bancaria"
-                    checked={paymentMethod === 'Transferencia Bancaria'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                  />
-                  <span>🏦 Transferencia Bancaria</span>
-                </label>
-                <label className="payment-option">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="Efectivo / Pago Local"
-                    checked={paymentMethod === 'Efectivo / Pago Local'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                  />  
-                  <span>💵 Efectivo / Pago Local</span>
-                </label>
-              </div>
-              <button className="back-btn" onClick={() => setCheckoutStep('cart')}>
-                Volver al carrito
-              </button>
-            </div>
-          )}
+         {/* metodo de pagos */}
+{checkoutStep === 'payment' && (
+  <div className="payment-selection">
+    <p>Selecciona cómo deseas abonar tu compra:</p>
+    <div className="payment-options">
+      
+      <label className={`payment-option ${paymentMethod === 'Tarjeta de Crédito / Débito' ? 'selected' : ''}`}>
+        <input
+          type="radio"
+          name="paymentMethod"
+          value="Tarjeta de Crédito / Débito"
+          checked={paymentMethod === 'Tarjeta de Crédito / Débito'}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+          className="radio-hidden"
+        />
+        <div className="payment-option-label">
+          <img src={tarjetaIcon} alt="Tarjeta" className="payment-icon"  />
+          <span>Tarjeta de Crédito / Débito</span>
+        </div>
+      </label>
+
+      <label className={`payment-option ${paymentMethod === 'PayPal' ? 'selected' : ''}`}>
+        <input
+          type="radio"
+          name="paymentMethod"
+          value="PayPal"
+          checked={paymentMethod === 'PayPal'}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+          className="radio-hidden"
+        />
+        <div className="payment-option-label">
+          <img src={paypalIcon} alt="PayPal" className="payment-icon" />
+          <span>PayPal</span>
+        </div>
+      </label>
+
+      <label className={`payment-option ${paymentMethod === 'Transferencia Bancaria' ? 'selected' : ''}`}>
+        <input
+          type="radio"
+          name="paymentMethod"
+          value="Transferencia Bancaria"
+          checked={paymentMethod === 'Transferencia Bancaria'}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+          className="radio-hidden"
+        />
+        <div className="payment-option-label">
+          <img src={bancoIcon} alt="Banco" className="payment-icon" />
+          <span>Transferencia Bancaria</span>
+        </div>
+      </label>
+
+      <label className={`payment-option ${paymentMethod === 'Efectivo / Pago Local' ? 'selected' : ''}`}>
+        <input
+          type="radio"
+          name="paymentMethod"
+          value="Efectivo / Pago Local"
+          checked={paymentMethod === 'Efectivo / Pago Local'}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+          className="radio-hidden"
+        />  
+        <div className="payment-option-label">
+          <img src={efectivoIcon} alt="Efectivo" className="payment-icon" />
+          <span>Efectivo / Pago Local</span>
+        </div>
+      </label>
+
+    </div>
+    <button className="back-btn" onClick={() => setCheckoutStep('cart')}>
+      Volver al carrito
+    </button>
+  </div>
+)}
 
           {/* Factura */}
           {checkoutStep === 'invoice' && invoice && (
